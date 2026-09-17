@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Secrets / env — NEVER commit credentials
+.env
+*.env.local
+*.env.*.local
+
+# Keys & certificates
+*.pem
+*.key
+*.p12
+*.pfx
+ssh/id_*
+!**/*.pub
+
+# Local junk
+logs/
+diagrams-unsanitized/

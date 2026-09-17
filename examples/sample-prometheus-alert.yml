@@ -1,0 +1,25 @@
+# sample-prometheus-alert.yml — genericised alert derived from the AIOps theme.
+#
+# Truth the production has: a monitored /metrics series that vanishes for more
+# than ~5 minutes means the *telemetry path* is broken, not necessarily the
+# monitored service. Prometheus marks a series stale after 5m without samples,
+# which is exactly what an instant query returns empty for.
+
+groups:
+  - name: telemetry
+    rules:
+      - alert: RelayMetricsStale
+        expr: (count(relay_up) == 0)
+        for: 5m
+        labels:
+          severity: critical
+          team: aiop
+        annotations:
+          summary: Relay metrics went stale (forwarder / pushgateway path?)
+          description: "relay_up has been absent from Prometheus for > 5m. Confirm with the shipper journal before blaming the relay."
+
+  # Playbook hint carried in the alert payload for the diagnosis step.
+  - name: suggestions
+    rules:
+      - record: job:usbip_relay:recent_samples_per_30s
+        expr: (sum(rate(relay_metrics_scrape_total[30s])) or 0)

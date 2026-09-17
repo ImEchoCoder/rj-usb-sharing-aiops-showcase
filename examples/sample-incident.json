@@ -1,0 +1,57 @@
+{
+  "incident_id": "107fcc994d84",
+  "kind": "relay-metrics-stale",
+  "timeline": [
+    {
+      "ts": 1789395930,
+      "actions": ["open"],
+      "worst": "critical",
+      "issues": [
+        {
+          "key": "obs/relay-metrics-stale",
+          "severity": "critical",
+          "detail": "no relay metrics pushed (forwarder/pushgateway down?)"
+        }
+      ],
+      "diagnosis": {
+        "severity": "critical",
+        "summary": "The relay metric relay_up disappeared from Prometheus for >5 minutes.",
+        "likely_cause": "Telemetry push starvation, not a relay outage.",
+        "evidence": {
+          "forwarder_log": "POST /loki/api/v1/push -> HTTP 500 (ingest-side timeout)",
+          "loki_log": "ingester failing healthcheck during the push window",
+          "relay_health": "all relay units with restarts=0, /healthz 200",
+          "notes": "apparent label 'forwarder/pushgateway down?' is misleading"
+        },
+        "confidence": "medium",
+        "confidence_score": 0.72
+      }
+    },
+    {
+      "ts": 1789395970,
+      "actions": ["update"],
+      "worst": "critical",
+      "issues": [
+        {
+          "key": "obs/relay-metrics-stale",
+          "severity": "critical",
+          "detail": "still stale; log-store ingest recovery in progress"
+        }
+      ]
+    },
+    {
+      "ts": 1789396377,
+      "actions": ["recover"],
+      "worst": "healthy",
+      "issues": []
+    }
+  ],
+  "postmortem": {
+    "opened": 1789395930,
+    "recovered": 1789396377,
+    "duration_s": 446,
+    "summary": "An ingest-side degradation in the log store caused HTTP 500s on log push; a single-threaded shipper then starved the metric upload; the relay metric went stale and tripped the alert. The relay unit itself (restarts=0, /healthz 200) was healthy throughout.",
+    "fix": "Decouple the metric push onto its own timer; tighten log-store limits for the small VM.",
+    "learned": true
+  }
+}

@@ -1,0 +1,54 @@
+# sample-loki-loki.yaml — minimal Loki config on the small-VM theme.
+#
+# Conservative limits tuned for a 1 GB VM: a restricted striper ingester and caps
+# on query fan-out. NOTE: with this Loki build the chunk knobs live under
+# `ingester:`; top-level `chunk_config:` / `chunk_max_age:` are NOT valid fields
+# and will make Loki crash-loop on `failed parsing config`.
+
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+
+common:
+  path_prefix: /loki
+  storage:
+    filesystem:
+      chunks_directory: /loki/chunks
+      rules_directory: /loki/rules
+  replication_factor: 1
+  ring:
+    instance_addr: 127.0.0.1
+    kvstore:
+      store: inmemory
+
+schema_config:
+  configs:
+    - from: 2026-08-01
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
+ingester:
+  wal:
+    dir: /loki/wal
+  chunk_target_size: 524288
+  chunk_idle_period: 15m
+
+querier:
+  query_ingesters_within: 12h
+
+limits_config:
+  retention_period: 14d
+  reject_old_samples: true
+  allow_structured_metadata: false
+  max_query_parallelism: 4
+  split_queries_by_interval: 1h
+  max_entries_limit_per_query: 500
+
+compactor:
+  working_directory: /loki/compactor
+  compaction_interval: 10m
